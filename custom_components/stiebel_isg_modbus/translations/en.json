@@ -1,0 +1,66 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "WattKeeper - Stiebel Eltron ISG Modbus",
+        "description": "Enter the address of the ISG (Modbus TCP must be enabled on the ISG).",
+        "data": {
+          "host": "IP address or hostname",
+          "port": "Port",
+          "slave": "Slave ID"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the ISG ({error}). Check the address, the port, that Modbus TCP is enabled, and that no other client (e.g. the YAML `modbus:` block) is connected to the ISG.",
+      "invalid_response": "The ISG answered with a Modbus error ({error}). Check the slave ID.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This ISG is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ISG options",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "timeout": "Modbus timeout (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "outdoor_temperature": {
+        "name": "Outdoor temperature"
+      },
+      "cc1_temperature": {
+        "name": "Heating circuit 1 temperature"
+      },
+      "dhw_temperature": {
+        "name": "Hot water temperature"
+      }
+    },
+    "climate": {
+      "cc1_heating": {
+        "name": "Heating circuit 1"
+      },
+      "dhw_comfort": {
+        "name": "Hot water comfort"
+      },
+      "dhw_eco": {
+        "name": "Hot water reduced"
+      }
+    }
+  },
+  "exceptions": {
+    "write_failed": {
+      "message": "Failed to write Modbus register {address}: {error}"
+    },
+    "no_previous_setpoint": {
+      "message": "Heating circuit 1 is off and no previous setpoint is known: set a temperature first."
+    }
+  }
+}

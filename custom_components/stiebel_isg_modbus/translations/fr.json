@@ -1,0 +1,66 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "WattKeeper - Stiebel Eltron ISG Modbus",
+        "description": "Renseignez l'adresse de l'ISG (le Modbus TCP doit être activé sur l'ISG).",
+        "data": {
+          "host": "Adresse IP ou nom d'hôte",
+          "port": "Port",
+          "slave": "Identifiant esclave (slave)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter à l'ISG ({error}). Vérifiez l'adresse, le port, l'activation du Modbus TCP, et qu'aucun autre client (par ex. le bloc `modbus:` du YAML) n'est connecté à l'ISG.",
+      "invalid_response": "L'ISG a répondu par une erreur Modbus ({error}). Vérifiez l'identifiant esclave.",
+      "unknown": "Erreur inattendue."
+    },
+    "abort": {
+      "already_configured": "Cet ISG est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options de l'ISG",
+        "data": {
+          "scan_interval": "Intervalle d'interrogation (secondes)",
+          "timeout": "Délai d'attente Modbus (secondes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "outdoor_temperature": {
+        "name": "Température extérieure"
+      },
+      "cc1_temperature": {
+        "name": "CC1 température actuelle"
+      },
+      "dhw_temperature": {
+        "name": "ECS température actuelle"
+      }
+    },
+    "climate": {
+      "cc1_heating": {
+        "name": "Chauffage CC1"
+      },
+      "dhw_comfort": {
+        "name": "ECS confort"
+      },
+      "dhw_eco": {
+        "name": "ECS réduit"
+      }
+    }
+  },
+  "exceptions": {
+    "write_failed": {
+      "message": "Échec de l'écriture du registre Modbus {address} : {error}"
+    },
+    "no_previous_setpoint": {
+      "message": "Le chauffage CC1 est à l'arrêt et aucune consigne précédente n'est connue : réglez d'abord une température."
+    }
+  }
+}

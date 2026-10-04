@@ -1,0 +1,12 @@
+{
+  "domain": "stiebel_isg_modbus",
+  "name": "WattKeeper - Stiebel Eltron ISG Modbus",
+  "codeowners": ["@crapitouille"],
+  "config_flow": true,
+  "documentation": "https://github.com/crapitouille/ha-stiebeleltron-isg",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/crapitouille/ha-stiebeleltron-isg/issues",
+  "requirements": ["pymodbus>=3.8.0"],
+  "version": "0.1.0"
+}
