@@ -26,7 +26,8 @@
         "title": "Options de l'ISG",
         "data": {
           "scan_interval": "Intervalle d'interrogation (secondes)",
-          "timeout": "Délai d'attente Modbus (secondes)"
+          "timeout": "Délai d'attente Modbus (secondes)",
+          "heating_threshold": "Seuil de période de chauffage (°C, consigne tampon au-dessus = chauffage)"
         }
       }
     }
@@ -41,6 +42,9 @@
       },
       "dhw_temperature": {
         "name": "ECS température actuelle"
+      },
+      "buffer_setpoint": {
+        "name": "Consigne tampon"
       }
     },
     "climate": {
@@ -52,6 +56,11 @@
       },
       "dhw_eco": {
         "name": "ECS réduit"
+      }
+    },
+    "binary_sensor": {
+      "heating_season": {
+        "name": "Période de chauffage"
       }
     }
   },

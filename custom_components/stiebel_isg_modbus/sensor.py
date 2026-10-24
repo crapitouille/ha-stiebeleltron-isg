@@ -7,7 +7,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -49,11 +49,15 @@ class IsgTemperatureSensor(CoordinatorEntity[IsgCoordinator], SensorEntity):
         self._attr_translation_key = definition.key
         self._attr_unique_id = f"{entry_id}_{definition.key}"
         self._attr_device_info = coordinator.device_info
+        if definition.diagnostic:
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
     def native_value(self) -> float | None:
         """Température en °C (None si la sonde est indisponible)."""
-        return decode_temperature(self.coordinator.data.input.get(self._definition.address))
+        return decode_temperature(
+            self.coordinator.data.input.get(self._definition.address)
+        )
 
     @property
     def available(self) -> bool:

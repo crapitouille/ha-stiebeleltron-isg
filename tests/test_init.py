@@ -29,8 +29,8 @@ async def test_installation_et_entites(
 
     registry = er.async_get(hass)
     entities = er.async_entries_for_config_entry(registry, entry.entry_id)
-    assert len(entities) == 6
-    assert {e.domain for e in entities} == {"sensor", "climate"}
+    assert len(entities) == 8
+    assert {e.domain for e in entities} == {"sensor", "binary_sensor", "climate"}
 
     device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
     assert device is not None
@@ -46,6 +46,8 @@ async def test_noms_et_entity_id_par_defaut(
         "sensor.stiebel_eltron_isg_outdoor_temperature": "Stiebel Eltron ISG Outdoor temperature",
         "sensor.stiebel_eltron_isg_heating_circuit_1_temperature": "Stiebel Eltron ISG Heating circuit 1 temperature",
         "sensor.stiebel_eltron_isg_hot_water_temperature": "Stiebel Eltron ISG Hot water temperature",
+        "sensor.stiebel_eltron_isg_buffer_setpoint_temperature": "Stiebel Eltron ISG Buffer setpoint temperature",
+        "binary_sensor.stiebel_eltron_isg_heating_season": "Stiebel Eltron ISG Heating season",
         "climate.stiebel_eltron_isg_heating_circuit_1": "Stiebel Eltron ISG Heating circuit 1",
         "climate.stiebel_eltron_isg_hot_water_comfort": "Stiebel Eltron ISG Hot water comfort",
         "climate.stiebel_eltron_isg_hot_water_reduced": "Stiebel Eltron ISG Hot water reduced",
@@ -67,6 +69,7 @@ async def test_registres_lus_une_seule_fois_par_cycle(
         ("holding", 1510),
         ("input", 506),
         ("input", 507),
+        ("input", 518),
         ("input", 521),
     ]
     assert fake_client.connect_calls == 1
@@ -82,7 +85,7 @@ async def test_cadence_d_interrogation_par_defaut(
     assert fake_client.reads == []
 
     await async_poll(hass, freezer, seconds=11)
-    assert len(fake_client.reads) == 7
+    assert len(fake_client.reads) == 8
 
 
 async def test_intervalle_issu_des_options(
@@ -98,7 +101,7 @@ async def test_intervalle_issu_des_options(
     assert fake_client.reads == []
 
     await async_poll(hass, freezer, seconds=61)
-    assert len(fake_client.reads) == 7
+    assert len(fake_client.reads) == 8
 
 
 async def test_dechargement(
@@ -171,7 +174,7 @@ async def test_une_perte_de_connexion_n_epuise_pas_les_timeouts(
 
     # Aucune lecture n'a abouti et le cycle n'a pas insisté sur chaque registre.
     assert fake_client.reads == []
-    assert len(fake_client.unit_ids) <= 2 + 7  # init + au plus une tentative
+    assert len(fake_client.unit_ids) <= 2 + 8  # init + au plus une tentative
 
 
 async def test_registre_illisible_n_affecte_pas_les_autres(
@@ -218,6 +221,8 @@ async def test_unique_ids_stables(hass: HomeAssistant, init_integration) -> None
             "outdoor_temperature",
             "cc1_temperature",
             "dhw_temperature",
+            "buffer_setpoint",
+            "heating_season",
             "cc1_heating",
             "dhw_comfort",
             "dhw_eco",

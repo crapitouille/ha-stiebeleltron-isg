@@ -18,7 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from pymodbus.exceptions import ModbusIOException
 
-from custom_components.stiebel_isg_modbus.const import DOMAIN
+from custom_components.stiebel_isg_modbus.const import CONF_HEATING_THRESHOLD, DOMAIN
 
 from .common import HOST, FakeModbusClient
 
@@ -207,12 +207,17 @@ async def test_options(
     assert result["step_id"] == "init"
 
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_SCAN_INTERVAL: 60, CONF_TIMEOUT: 10}
+        result["flow_id"],
+        {CONF_SCAN_INTERVAL: 60, CONF_TIMEOUT: 10, CONF_HEATING_THRESHOLD: 7.5},
     )
     await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert entry.options == {CONF_SCAN_INTERVAL: 60, CONF_TIMEOUT: 10}
+    assert entry.options == {
+        CONF_SCAN_INTERVAL: 60,
+        CONF_TIMEOUT: 10,
+        CONF_HEATING_THRESHOLD: 7.5,
+    }
     # L'entrée est rechargée avec les nouvelles options.
     assert entry.state is config_entries.ConfigEntryState.LOADED
     assert entry.runtime_data.update_interval == timedelta(seconds=60)
@@ -222,10 +227,12 @@ async def test_options(
 @pytest.mark.parametrize(
     "bad_options",
     [
-        {CONF_SCAN_INTERVAL: 1, CONF_TIMEOUT: 5},
-        {CONF_SCAN_INTERVAL: 7200, CONF_TIMEOUT: 5},
-        {CONF_SCAN_INTERVAL: 30, CONF_TIMEOUT: 0},
-        {CONF_SCAN_INTERVAL: 30, CONF_TIMEOUT: 120},
+        {CONF_SCAN_INTERVAL: 1, CONF_TIMEOUT: 5, CONF_HEATING_THRESHOLD: 5.0},
+        {CONF_SCAN_INTERVAL: 7200, CONF_TIMEOUT: 5, CONF_HEATING_THRESHOLD: 5.0},
+        {CONF_SCAN_INTERVAL: 30, CONF_TIMEOUT: 0, CONF_HEATING_THRESHOLD: 5.0},
+        {CONF_SCAN_INTERVAL: 30, CONF_TIMEOUT: 120, CONF_HEATING_THRESHOLD: 5.0},
+        {CONF_SCAN_INTERVAL: 30, CONF_TIMEOUT: 5, CONF_HEATING_THRESHOLD: -1},
+        {CONF_SCAN_INTERVAL: 30, CONF_TIMEOUT: 5, CONF_HEATING_THRESHOLD: 31},
     ],
 )
 async def test_options_hors_plage_refusees(
@@ -281,3 +288,20 @@ async def test_valeurs_numeriques_converties_en_entiers(
     assert type(data[CONF_PORT]) is int
     assert type(data[CONF_SLAVE]) is int
     assert result["result"].unique_id == f"{HOST}:502:3"
+
+
+async def test_options_seuil_par_defaut_et_types(
+    hass: HomeAssistant, init_integration
+) -> None:
+    """Sans saisie du seuil, 5,0 °C est proposé ; les types restent propres."""
+    result = await hass.config_entries.options.async_init(init_integration.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_SCAN_INTERVAL: 45.0, CONF_TIMEOUT: 8.0}
+    )
+    await hass.async_block_till_done()
+
+    options = dict(init_integration.options)
+    assert options == {CONF_SCAN_INTERVAL: 45, CONF_TIMEOUT: 8, CONF_HEATING_THRESHOLD: 5.0}
+    assert type(options[CONF_SCAN_INTERVAL]) is int
+    assert type(options[CONF_TIMEOUT]) is int
+    assert type(options[CONF_HEATING_THRESHOLD]) is float

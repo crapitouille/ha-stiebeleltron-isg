@@ -68,6 +68,22 @@ def decode_setpoint(
     return decode_temperature(raw, scale, precision)
 
 
+def is_heating_season(raw: int | None, threshold: float) -> bool | None:
+    """Période de chauffage ? Vrai si la consigne tampon dépasse le seuil.
+
+    La comparaison se fait sur les valeurs brutes (dixièmes de °C) pour éviter
+    toute erreur d'arrondi : 5,0 °C (raw 50) n'est PAS du chauffage, 5,1 °C l'est.
+    Renvoie None si la valeur est inconnue (registre illisible ou sonde absente) :
+    on ne conclut jamais « hors saison » sur une simple perte de communication.
+    """
+    if raw is None:
+        return None
+    value = to_signed16(raw)
+    if value == INVALID_INT16:
+        return None
+    return value > round(threshold / TEMPERATURE_SCALE)
+
+
 def encode_temperature(value: float, scale: float = TEMPERATURE_SCALE) -> int:
     """Convertit des degrés Celsius en valeur de registre (16 bits non signé)."""
     raw = round(value / scale)
@@ -115,6 +131,7 @@ class SensorDef:
 
     key: str
     address: int
+    diagnostic: bool = False  # entité de diagnostic (masquée des tableaux de bord auto)
 
 
 @dataclass(frozen=True)
@@ -137,6 +154,10 @@ class ClimateDef:
 
 OUTDOOR_TEMPERATURE_ADDRESS = 506
 
+# « TEMP. CONSIGNE TAMPON » (PUFFERSOLLTEMPERATUR, doc 519 -> adresse 518).
+# 5,0 °C = hors période de chauffage ; au-dessus = période de chauffage.
+BUFFER_SETPOINT_ADDRESS = 518
+
 # Mode de fonctionnement global de la pompe à chaleur (registre 1500) :
 # 1 = veille, 2 = automatique, 3/4/5 = chauffage (jour / réduit / ECS).
 GLOBAL_MODE = ModeMapping(
@@ -152,6 +173,7 @@ SENSORS: tuple[SensorDef, ...] = (
     SensorDef(key="outdoor_temperature", address=OUTDOOR_TEMPERATURE_ADDRESS),
     SensorDef(key="cc1_temperature", address=507),
     SensorDef(key="dhw_temperature", address=521),
+    SensorDef(key="buffer_setpoint", address=BUFFER_SETPOINT_ADDRESS, diagnostic=True),
 )
 
 CLIMATES: tuple[ClimateDef, ...] = (

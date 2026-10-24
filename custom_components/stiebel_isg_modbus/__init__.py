@@ -16,7 +16,11 @@ from .const import DEFAULT_TIMEOUT
 from .coordinator import IsgConfigEntry, IsgCoordinator
 from .hub import IsgModbusHub
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.CLIMATE]
+PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.SENSOR,
+    Platform.CLIMATE,
+]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: IsgConfigEntry) -> bool:

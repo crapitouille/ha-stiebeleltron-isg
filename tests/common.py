@@ -21,6 +21,7 @@ HOST = "192.168.0.199"
 DEFAULT_INPUT = {
     506: 85,  # extérieur : 8,5 °C
     507: 352,  # CC1 : 35,2 °C
+    518: 350,  # consigne tampon : 35,0 °C (période de chauffage)
     521: 487,  # ECS : 48,7 °C
 }
 DEFAULT_HOLDING = {

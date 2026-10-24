@@ -23,12 +23,16 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_HEATING_THRESHOLD,
+    DEFAULT_HEATING_THRESHOLD,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE,
     DEFAULT_TIMEOUT,
     DOMAIN,
+    MAX_HEATING_THRESHOLD,
     MAX_SCAN_INTERVAL,
+    MIN_HEATING_THRESHOLD,
     MIN_SCAN_INTERVAL,
 )
 from .coordinator import IsgConfigEntry
@@ -38,10 +42,12 @@ from .registers import OUTDOOR_TEMPERATURE_ADDRESS
 _LOGGER = logging.getLogger(__name__)
 
 
-def _number_box(minimum: int, maximum: int, unit: str | None = None) -> NumberSelector:
+def _number_box(
+    minimum: float, maximum: float, unit: str | None = None, step: float = 1
+) -> NumberSelector:
     """Champ numérique en saisie libre (et non en curseur)."""
     config = NumberSelectorConfig(
-        min=minimum, max=maximum, step=1, mode=NumberSelectorMode.BOX
+        min=minimum, max=maximum, step=step, mode=NumberSelectorMode.BOX
     )
     if unit is not None:
         config["unit_of_measurement"] = unit
@@ -138,7 +144,11 @@ class IsgOptionsFlow(OptionsFlow):
         """Gère les options."""
         if user_input is not None:
             return self.async_create_entry(
-                data={key: int(value) for key, value in user_input.items()}
+                data={
+                    CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
+                    CONF_TIMEOUT: int(user_input[CONF_TIMEOUT]),
+                    CONF_HEATING_THRESHOLD: float(user_input[CONF_HEATING_THRESHOLD]),
+                }
             )
 
         options = self.config_entry.options
@@ -152,6 +162,14 @@ class IsgOptionsFlow(OptionsFlow):
                     CONF_TIMEOUT,
                     default=options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT),
                 ): _number_box(1, 60, "s"),
+                vol.Required(
+                    CONF_HEATING_THRESHOLD,
+                    default=options.get(
+                        CONF_HEATING_THRESHOLD, DEFAULT_HEATING_THRESHOLD
+                    ),
+                ): _number_box(
+                    MIN_HEATING_THRESHOLD, MAX_HEATING_THRESHOLD, "°C", step=0.5
+                ),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

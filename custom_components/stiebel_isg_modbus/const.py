@@ -14,3 +14,9 @@ DEFAULT_SCAN_INTERVAL = 30
 
 MIN_SCAN_INTERVAL = 5
 MAX_SCAN_INTERVAL = 3600
+
+# Option : au-dessus de ce seuil (°C) de consigne tampon, on est en période de chauffage.
+CONF_HEATING_THRESHOLD = "heating_threshold"
+DEFAULT_HEATING_THRESHOLD = 5.0
+MIN_HEATING_THRESHOLD = 0.0
+MAX_HEATING_THRESHOLD = 30.0

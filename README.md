@@ -36,8 +36,8 @@ de Home Assistant, puis redémarrez.
 | Port | 502 | Port Modbus TCP |
 | Identifiant esclave | 1 | `slave` / unit id |
 
-Options (roue dentée de l'intégration) : intervalle d'interrogation (30 s par défaut)
-et délai d'attente Modbus (5 s par défaut).
+Options (roue dentée de l'intégration) : intervalle d'interrogation (30 s par défaut),
+délai d'attente Modbus (5 s par défaut) et seuil de période de chauffage (5,0 °C par défaut).
 
 > Le Modbus TCP doit être activé sur l'ISG. L'ISG n'accepte qu'un nombre très limité
 > de connexions simultanées : ne laissez pas l'ancien bloc `modbus:` actif en même temps.
@@ -49,12 +49,41 @@ et délai d'attente Modbus (5 s par défaut).
 | Température extérieure | capteur | 506 (input) | int16, ×0,1 °C |
 | CC1 température actuelle | capteur | 507 (input) | int16, ×0,1 °C |
 | ECS température actuelle | capteur | 521 (input) | int16, ×0,1 °C |
+| Consigne tampon | capteur (diagnostic) | 518 (input) | int16, ×0,1 °C — `TEMP. CONSIGNE TAMPON` |
+| Période de chauffage | capteur binaire | 518 (input) | actif si consigne tampon > 5,0 °C |
 | Chauffage CC1 | thermostat | T° 507, consigne 1507 | 20–45 °C, pas 0,5 |
 | ECS confort | thermostat | T° 521, consigne 1509 | 40–60 °C, pas 0,5 |
 | ECS réduit | thermostat | T° 521, consigne 1510 | 40–60 °C, pas 0,5 |
 
 Les adresses sont celles passées telles quelles à pymodbus (base 0), comme dans le YAML
 d'origine. Une sonde absente (valeur `-32768`) rend le capteur *indisponible*.
+
+### Période de chauffage (hiver / hors saison)
+
+Le capteur binaire **Période de chauffage** se base sur la **consigne tampon**
+(`TEMP. CONSIGNE TAMPON`, `PUFFERSOLLTEMPERATUR` : doc 519 → adresse **518**) :
+
+| Consigne tampon | Période de chauffage |
+|---|---|
+| 5,0 °C (ou moins) | **inactive** (hors période de chauffage) |
+| plus de 5,0 °C | **active** (chauffage) |
+| valeur invalide (`0x8000`) ou lecture impossible | **indisponible** |
+
+- Une coupure de communication n'est jamais interprétée comme « hors saison » : le capteur devient
+  *indisponible*.
+- La comparaison est faite sur la valeur brute (dixièmes de °C) : 5,0 n'est pas du chauffage, 5,1 l'est.
+- Le seuil (5,0 °C par défaut) se règle dans les options de l'intégration ; il est aussi visible dans
+  l'attribut `threshold` du capteur, avec la consigne lue dans `buffer_setpoint`.
+- Exemple d'automatisation :
+
+```yaml
+trigger:
+  - platform: state
+    entity_id: binary_sensor.stiebel_eltron_isg_heating_season
+    to: "on"
+```
+
+> L'ISG expose aussi le bit « mode été » (registre doc 2501, bit 7 `SOMMERBETRIEB AKTIV`), non utilisé ici.
 
 ### Modes (registre global 1500)
 
@@ -125,9 +154,10 @@ La suite couvre :
   (adresses, plages, mapping des modes) ;
 - le client Modbus : reconnexion, sérialisation des requêtes, compatibilité `device_id` / `slave`
   (pymodbus ≥ 3.10 et antérieur), erreurs de connexion vs erreurs de registre ;
-- l'assistant de configuration et les options ;
+- l'assistant de configuration et les options (dont le seuil de période de chauffage) ;
 - le cycle de vie, la cadence d'interrogation, la perte/reprise de communication ;
 - capteurs et thermostats (écritures, consignes hors plage, modes, échecs d'écriture) ;
+- la détection de période de chauffage (seuil exact 5,0 / 5,1 °C, valeur invalide, perte de communication) ;
 - des tests **bout en bout contre un vrai serveur Modbus TCP pymodbus** local ;
 - la cohérence des traductions (`en`, `fr`) et des métadonnées (`manifest.json`, `hacs.json`).
 

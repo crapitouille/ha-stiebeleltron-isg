@@ -1,0 +1,17 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "heating_season": {
+        "default": "mdi:radiator-off",
+        "state": {
+          "on": "mdi:radiator"
+        }
+      }
+    },
+    "sensor": {
+      "buffer_setpoint": {
+        "default": "mdi:thermometer-water"
+      }
+    }
+  }
+}

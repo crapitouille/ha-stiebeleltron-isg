@@ -26,7 +26,8 @@
         "title": "ISG options",
         "data": {
           "scan_interval": "Polling interval (seconds)",
-          "timeout": "Modbus timeout (seconds)"
+          "timeout": "Modbus timeout (seconds)",
+          "heating_threshold": "Heating season threshold (°C, buffer setpoint above this value = heating)"
         }
       }
     }
@@ -41,6 +42,9 @@
       },
       "dhw_temperature": {
         "name": "Hot water temperature"
+      },
+      "buffer_setpoint": {
+        "name": "Buffer setpoint temperature"
       }
     },
     "climate": {
@@ -52,6 +56,11 @@
       },
       "dhw_eco": {
         "name": "Hot water reduced"
+      }
+    },
+    "binary_sensor": {
+      "heating_season": {
+        "name": "Heating season"
       }
     }
   },

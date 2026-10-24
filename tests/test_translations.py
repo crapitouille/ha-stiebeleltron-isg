@@ -70,6 +70,21 @@ def test_toutes_les_entites_sont_traduites(language: str) -> None:
         assert entity["sensor"][sensor.key]["name"]
     for climate in CLIMATES:
         assert entity["climate"][climate.key]["name"]
+    assert entity["binary_sensor"]["heating_season"]["name"]
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_option_de_seuil_traduite(language: str) -> None:
+    data = _load(language)["options"]["step"]["init"]["data"]
+    assert data["heating_threshold"]
+    assert {"scan_interval", "timeout"} <= set(data)
+
+
+def test_icones() -> None:
+    icons = json.loads((COMPONENT / "icons.json").read_text("utf-8"))["entity"]
+    assert icons["binary_sensor"]["heating_season"]["default"]
+    assert icons["binary_sensor"]["heating_season"]["state"]["on"]
+    assert icons["sensor"]["buffer_setpoint"]["default"]
 
 
 @pytest.mark.parametrize("language", LANGUAGES)

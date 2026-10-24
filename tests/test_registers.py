@@ -11,7 +11,9 @@ from custom_components.stiebel_isg_modbus.registers import (
     SENSORS,
     ModeMapping,
     SETPOINT_OFF_VALUE,
+    BUFFER_SETPOINT_ADDRESS,
     decode_setpoint,
+    is_heating_season,
     decode_temperature,
     encode_temperature,
     holding_addresses,
@@ -102,6 +104,7 @@ def test_capteurs_conformes_au_yaml_d_origine() -> None:
         "outdoor_temperature": 506,
         "cc1_temperature": 507,
         "dhw_temperature": 521,
+        "buffer_setpoint": 518,
     }
 
 
@@ -139,7 +142,7 @@ def test_plages_de_consigne_coherentes() -> None:
 
 
 def test_adresses_a_lire_sans_doublon() -> None:
-    assert input_addresses() == [506, 507, 521]
+    assert input_addresses() == [506, 507, 518, 521]
     assert holding_addresses() == [1500, 1507, 1509, 1510]
 
 
@@ -161,3 +164,62 @@ def test_decode_setpoint() -> None:
     # Sans valeur d'arrêt, le décodage reste celui d'une température.
     assert decode_setpoint(355) == 35.5
     assert decode_setpoint(36864) == -2867.2
+
+
+# --- Période de chauffage : consigne tampon (registre 518) --------------------
+
+
+def test_adresse_de_la_consigne_tampon() -> None:
+    """Doc 519 (PUFFERSOLLTEMPERATUR) -> adresse 518, confirmée sur l'ISG réel."""
+    assert BUFFER_SETPOINT_ADDRESS == 518
+    sensor = next(s for s in SENSORS if s.key == "buffer_setpoint")
+    assert sensor.address == 518
+    assert sensor.diagnostic is True
+    assert not any(s.diagnostic for s in SENSORS if s.key != "buffer_setpoint")
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        (50, False),  # 5,0 °C : hors période de chauffage
+        (51, True),  # 5,1 °C : chauffage
+        (49, False),
+        (0, False),
+        (350, True),
+        (450, True),
+        (0xFFF6, False),  # négatif (-1,0 °C)
+        (0x7FFF, True),
+    ],
+)
+def test_is_heating_season_seuil_par_defaut(raw: int, expected: bool) -> None:
+    assert is_heating_season(raw, 5.0) is expected
+
+
+@pytest.mark.parametrize("raw", [None, 0x8000])
+def test_is_heating_season_valeur_inconnue(raw: int | None) -> None:
+    """Pas de conclusion « hors saison » sur une valeur absente ou invalide."""
+    assert is_heating_season(raw, 5.0) is None
+
+
+@pytest.mark.parametrize(
+    ("raw", "threshold", "expected"),
+    [(50, 4.9, True), (49, 4.9, False), (100, 10.0, False), (101, 10.0, True), (60, 5.5, True), (55, 5.5, False)],
+)
+def test_is_heating_season_seuil_configurable(
+    raw: int, threshold: float, expected: bool
+) -> None:
+    assert is_heating_season(raw, threshold) is expected
+
+
+def test_is_heating_season_pas_d_erreur_d_arrondi_flottant() -> None:
+    """0,1 * 51 n'est pas exactement 5,1 en flottant : la comparaison reste exacte."""
+    for tenths in range(0, 400):
+        assert is_heating_season(tenths, 5.0) is (tenths > 50)
+
+
+def test_is_heating_season_exact_pour_tous_les_seuils_au_dixieme() -> None:
+    """Pour tout seuil au dixième de °C, la valeur égale au seuil n'est pas « chauffage »."""
+    for tenths in range(0, 301):
+        threshold = tenths / 10
+        for raw in (tenths - 1, tenths, tenths + 1):
+            assert is_heating_season(raw, threshold) is (raw > tenths), (raw, threshold)

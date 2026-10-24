@@ -82,7 +82,7 @@ async def real_isg() -> AsyncGenerator[RealIsg]:
     await asyncio.sleep(0.2)  # laisse le serveur écouter
 
     isg = RealIsg(port, input_block, holding_block)
-    for address, value in {506: 85, 507: 352, 521: 487}.items():
+    for address, value in {506: 85, 507: 352, 518: 350, 521: 487}.items():
         isg.set_input(address, value)
     for address, value in {1500: 2, 1507: 355, 1509: 500, 1510: 400}.items():
         isg.set_holding(address, value)
@@ -154,6 +154,16 @@ async def test_integration_complete(hass: HomeAssistant, real_isg: RealIsg) -> N
     assert (
         hass.states.get(get_entity_id(hass, "sensor", entry, "dhw_temperature")).state
         == "48.7"
+    )
+
+    # Période de chauffage : la consigne tampon (registre 518) vaut 35,0 °C.
+    assert (
+        hass.states.get(get_entity_id(hass, "sensor", entry, "buffer_setpoint")).state
+        == "35.0"
+    )
+    assert (
+        hass.states.get(get_entity_id(hass, "binary_sensor", entry, "heating_season")).state
+        == "on"
     )
 
     cc1 = get_entity_id(hass, "climate", entry, "cc1_heating")
